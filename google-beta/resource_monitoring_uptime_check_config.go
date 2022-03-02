@@ -52,6 +52,12 @@ func resourceMonitoringUptimeCheckConfig() *schema.Resource {
 				Required:    true,
 				Description: `The maximum amount of time to wait for the request to complete (must be between 1 and 60 seconds). Accepted formats https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration`,
 			},
+			"checker_type": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validateEnum([]string{"CHECKER_TYPE_UNSPECIFIED", "STATIC_IP_CHECKERS", "VPC_CHECKERS", ""}),
+				Description:  `What kind of checkers are available to be used by the check. Possible values: ["TYPE_UNSPECIFIED", "URL_ENCODED", "VPC_CHECKERS"]`,
+			},
 			"content_matchers": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -301,6 +307,12 @@ func resourceMonitoringUptimeCheckConfigCreate(d *schema.ResourceData, meta inte
 	} else if v, ok := d.GetOkExists("content_matchers"); !isEmptyValue(reflect.ValueOf(contentMatchersProp)) && (ok || !reflect.DeepEqual(v, contentMatchersProp)) {
 		obj["contentMatchers"] = contentMatchersProp
 	}
+	checkertypeProp, err := expandMonitoringUptimeCheckConfigCheckerType(d.Get("checker_type"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("checker_type"); !isEmptyValue(reflect.ValueOf(checkertypeProp)) && (ok || !reflect.DeepEqual(v, checkertypeProp)) {
+		obj["checkerType"] = checkertypeProp
+	}
 	selectedRegionsProp, err := expandMonitoringUptimeCheckConfigSelectedRegions(d.Get("selected_regions"), d, config)
 	if err != nil {
 		return err
@@ -448,6 +460,9 @@ func resourceMonitoringUptimeCheckConfigRead(d *schema.ResourceData, meta interf
 	if err := d.Set("content_matchers", flattenMonitoringUptimeCheckConfigContentMatchers(res["contentMatchers"], d, config)); err != nil {
 		return fmt.Errorf("Error reading UptimeCheckConfig: %s", err)
 	}
+	if err := d.Set("checker_type", flattenMonitoringUptimeCheckConfigCheckerType(res["checkerType"], d, config)); err != nil {
+		return fmt.Errorf("Error reading UptimeCheckConfig: %s", err)
+	}
 	if err := d.Set("selected_regions", flattenMonitoringUptimeCheckConfigSelectedRegions(res["selectedRegions"], d, config)); err != nil {
 		return fmt.Errorf("Error reading UptimeCheckConfig: %s", err)
 	}
@@ -501,6 +516,12 @@ func resourceMonitoringUptimeCheckConfigUpdate(d *schema.ResourceData, meta inte
 	} else if v, ok := d.GetOkExists("content_matchers"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, contentMatchersProp)) {
 		obj["contentMatchers"] = contentMatchersProp
 	}
+	checkertypeProp, err := expandMonitoringUptimeCheckConfigContentMatchers(d.Get("checker_type"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("checker_type"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, checkertypeProp)) {
+		obj["checkerType"] = checkertypeProp
+	}
 	selectedRegionsProp, err := expandMonitoringUptimeCheckConfigSelectedRegions(d.Get("selected_regions"), d, config)
 	if err != nil {
 		return err
@@ -545,6 +566,10 @@ func resourceMonitoringUptimeCheckConfigUpdate(d *schema.ResourceData, meta inte
 
 	if d.HasChange("content_matchers") {
 		updateMask = append(updateMask, "contentMatchers")
+	}
+
+	if d.HasChange("checker_type") {
+		updateMask = append(updateMask, "checkerType")
 	}
 
 	if d.HasChange("selected_regions") {
@@ -655,6 +680,10 @@ func flattenMonitoringUptimeCheckConfigPeriod(v interface{}, d *schema.ResourceD
 }
 
 func flattenMonitoringUptimeCheckConfigTimeout(v interface{}, d *schema.ResourceData, config *Config) interface{} {
+	return v
+}
+
+func flattenMonitoringUptimeCheckConfigCheckerType(v interface{}, d *schema.ResourceData, config *Config) interface{} {
 	return v
 }
 
@@ -874,6 +903,10 @@ func expandMonitoringUptimeCheckConfigDisplayName(v interface{}, d TerraformReso
 }
 
 func expandMonitoringUptimeCheckConfigPeriod(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandMonitoringUptimeCheckConfigCheckerType(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
